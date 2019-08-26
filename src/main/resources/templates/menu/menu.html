@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>菜单管理</title>
+    <head th:include="comm::header">
+    </head>
+<body>
+    <div>
+        <div class="layui-card-body ">
+            <form class="layui-form layui-col-space5">
+                <div class="layui-inline layui-show-xs-block">
+                    <input class="layui-input"  autocomplete="off" placeholder="开始日" name="startTime" id="startTime">
+                </div>
+                <div class="layui-inline layui-show-xs-block">
+                    <input class="layui-input"  autocomplete="off" placeholder="截止日" name="endTime" id="endTime">
+                </div>
+                <div class="layui-inline layui-show-xs-block">
+                    <input type="text" name="title2" id="title2" placeholder="请输入菜单名称" autocomplete="off" class="layui-input">
+                </div>
+
+                <a class="layui-btn" id="search" onclick="searchMenu()" ><i class="layui-icon">&#xe615;</i></a>
+            </form>
+        </div>
+        <div class="layui-card-header">
+            <button class="layui-btn" onclick="xadmin.open('添加菜单','../menu/toAddMenu',500,500)"><i class="layui-icon"></i>添加</button>
+        </div>
+        <table class="layui-hide" id="test" lay-filter="test"></table>
+    </div>
+
+    <!--编辑模态框-->
+    <div id="motaikuang" style="display: none;">
+        <div class="x-body">
+            <form class="layui-form">
+                <input type="hidden" id="menuId" name="menuId">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>菜单名称
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="text" id="title" name="title" lay-verify="required|myName"
+                               autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>所属上级
+                    </label>
+                    <div class="layui-input-inline" >
+                        <select name="menuBelongId" id="menuAll" lay-verify="required">
+                            <option value="">--请选择--</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label"></label>
+                    <input class="layui-btn" id="btnSave" lay-filter="update" lay-submit="" type="submit" value="确认修改" />
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 行操作 -->
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+
+    <!-- 展示页面所需js -->
+    <script type="text/javascript" th:inline="none">
+
+        layui.use(['table','form','laydate'], function() {
+            var table = layui.table,
+                form = layui.form,
+                laydate = layui.laydate;
+
+            //数据获取
+            table.render({
+                /* id:"uid",//可以在这里设置需要隐藏的列的字段名，如果是要隐藏多列的话这样写 id:'id,sex' */
+                elem: '#test'
+                ,url: '/menu/list'
+                ,title: '角色数据表'
+                ,method:"post"
+                ,cols: [[
+                    {type: 'numbers', title: '编号', fixed: 'left'}
+                    ,{field: 'menuId', title: '菜单id', sort: true, totalRow: true}
+                    ,{field: 'title', title: '菜单名称'}
+                    ,{field: 'menuBelongId', title: '菜单上级id'}
+                    ,{field: 'createTime', title: '创建时间', sort: true}
+                    ,{field: 'updateTime',  title: '修改时间', sort: true}
+                    ,{fixed: 'right', title: '操作', align: 'center', toolbar: '#barDemo'}
+                ]]
+                , page: true
+            });
+
+            //日期选择1
+            var nowTime = new Date().valueOf();
+            var start = laydate.render({
+                elem: '#startTime',
+                type: 'date',
+                max: nowTime,
+                done: function(value, date){
+                    end.config.min = date;
+                    end.config.min.month = date.month-1;
+                }
+            });
+
+            //日期选择2
+            var end = laydate.render({
+                elem: '#endTime',
+                type: 'date',
+                max: nowTime,
+                done: function(value, date){
+                    if($.trim(value) == ''){
+                        var curDate = new Date();
+                        date = {'date': curDate.getDate(), 'month': curDate.getMonth()+1, 'year': curDate.getFullYear()};
+                    }
+                    start.config.max = date;
+                    start.config.max.month = date.month-1;
+                }
+            });
+
+            //监听行工具事件
+            table.on('tool(test)', function(obj) {
+                var data = obj.data;
+                //菜单删除操作
+                if(obj.event === 'del'){
+                    layer.confirm('确认删除菜单', function(index){
+                        $.ajax({
+                            url:"/menu/del",
+                            data:{"menuId":data.menuId},
+                            type:"post",
+                            success:function(datas){
+                                if (datas=="success") {
+                                    table.reload("test");
+                                    layer.close(layer.index);
+                                    layer.msg("成功删除");
+                                }
+                            },
+                            error:function(){
+                                layer.msg("删除失败");
+                            }
+                        });
+                    });
+                } else if(obj.event === 'edit') {
+                    //编辑事件
+                    $("[name='menuId']").val(data.menuId);
+                    $("[name='title']").val(data.title);
+                    $("[name='menuBelongId']").val(data.menuBelongId);
+
+                    //刷新表单数据 使其默认值有效
+                    form.render(); //更新全部
+
+                    //打开模态框
+                    layer.open({
+                        type: 1,//类型
+                        area: ['500px', '500px'],//定义宽和高
+                        title: '查看详细信息',//题目
+                        shadeClose: false,//点击遮罩层关闭
+                        content: $('#motaikuang')//打开的内容
+                    });
+                }
+            });
+
+            //加载下拉框中的数据（菜单上级选择）
+            $.ajax({
+                url:"/menu/all",
+                type:"post",
+                dataType:"json",
+                success:function(data){
+                    var list = "";
+                    for (var i = 0; i < data.length; i++) {
+                        list+="<option value='"+data[i].menuId+"'>"+ data[i].title +"</option>";
+                    }
+                    $("#menuAll").append(list);
+                    //重新刷新form表单
+                    form.render();
+                },
+                error:function(data){
+                    layer.msg("菜单信息获取错误");
+                }
+            });
+
+            //监听修改提交
+            form.on('submit(update)', function(data){
+                // * 整合表单数据
+                var formData = data.field;
+                //发异步，把数据提交
+                $.ajax({
+                    url:"/menu/update",
+                    data:formData,
+                    type:"post",
+                    success:function(datas){
+                        // 关闭最近的弹窗
+                        layer.close(layer.index);
+                        // 刷新表格信息
+                        table.reload("test");
+
+                        if (datas=="success") {
+                            layer.msg("菜单信息修改成功", {icon: 6});
+                        } else {
+                            layer.msg("菜单信息修改失败", {icon: 5});
+                        }
+                    },
+                    error:function(){
+                        layer.msg("菜单信息修改错误", {icon: 5});
+                    }
+                });
+                //必不可少
+                return false;
+            });
+
+
+        });
+
+        //模糊查询刷新页面
+        function searchMenu(){
+            layui.use('table', function(){
+                var table = layui.table;
+                var title = $("#title2").val();
+                var startTime = $("#startTime").val();
+                var endTime = $("#endTime").val();
+                table.reload('test', {
+                    url: '/menu/list'
+                    ,method:"post"
+                    ,where: {
+                        title:title,
+                        startTime:startTime,
+                        endTime:endTime
+                    } //设定异步数据接口的额外参数
+                    ,page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                });
+            });
+        }
+
+    </script>
+</body>
+</html>

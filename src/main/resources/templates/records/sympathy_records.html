@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>生日慰问记录信息</title>
+    <head th:include="comm::header">
+    </head>
+<body>
+<div>
+    <div class="layui-card-body ">
+        <form class="layui-form layui-col-space5">
+            <div class="layui-inline layui-show-xs-block">
+                <input class="layui-input"  autocomplete="off" placeholder="开始日" name="startTime" id="startTime">
+            </div>
+            <div class="layui-inline layui-show-xs-block">
+                <input class="layui-input"  autocomplete="off" placeholder="截止日" name="endTime" id="endTime">
+            </div>
+
+            <a class="layui-btn" id="search" onclick="searchRecords()" ><i class="layui-icon">&#xe615;</i></a>
+        </form>
+    </div>
+    <table class="layui-hide" id="test" lay-filter="test"></table>
+</div>
+
+<!-- 展示页面所需js -->
+<script type="text/javascript" th:inline="none">
+
+    layui.use(['table','laydate'], function() {
+        var table = layui.table,
+            laydate = layui.laydate;
+
+        //数据获取
+        table.render({
+            /* id:"uid",//可以在这里设置需要隐藏的列的字段名，如果是要隐藏多列的话这样写 id:'id,sex' */
+            elem: '#test'
+            , url: '/sympathy/list'
+            , title: '生日慰问记录表'
+            , cols: [[
+                {type: 'numbers', title: '编号', fixed: 'left'}
+                , {field: 'id', width:100, title: '记录编号', sort: true, totalRow: true}
+                , {field: 'userId', width:100, title: '用户编号'}
+                , {field: 'content', width:600, title: '记录描述'}
+                , {field: 'createTime', title: '创建时间', sort: true}
+            ]]
+            , page: true
+        });
+
+        //日期选择1
+        var nowTime = new Date().valueOf();
+        var start = laydate.render({
+            elem: '#startTime',
+            type: 'date',
+            max: nowTime,
+            done: function(value, date){
+                end.config.min = date;
+                end.config.min.month = date.month-1;
+            }
+        });
+
+        //日期选择2
+        var end = laydate.render({
+            elem: '#endTime',
+            type: 'date',
+            max: nowTime,
+            done: function(value, date){
+                if($.trim(value) == ''){
+                    var curDate = new Date();
+                    date = {'date': curDate.getDate(), 'month': curDate.getMonth()+1, 'year': curDate.getFullYear()};
+                }
+                start.config.max = date;
+                start.config.max.month = date.month-1;
+            }
+        });
+
+    });
+
+    //模糊查询刷新页面
+    function searchRecords(){
+        layui.use('table', function(){
+            var table = layui.table;
+            var startTime = $("#startTime").val();
+            var endTime = $("#endTime").val();
+            table.reload('test', {
+                url: '/sympathy/list'
+                ,method:"post"
+                ,where: {
+                    startTime:startTime,
+                    endTime:endTime
+                } //设定异步数据接口的额外参数
+                ,page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+            });
+        });
+    }
+
+</script>
+</body>
+</html>

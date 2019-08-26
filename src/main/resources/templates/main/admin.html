@@ -1,0 +1,113 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>客户关系管理系统</title>
+    <head th:include="comm::header">
+    </head>
+</head>
+<body class="index">
+<!-- 顶部开始 -->
+<div class="container">
+    <div class="logo">
+        <a href="javascript:;">客户关系管理系统</a></div>
+    <div class="left_open">
+        <a><i title="展开左侧栏" class="iconfont">&#xe699;</i></a>
+    </div>
+
+    <ul class="layui-nav right" lay-filter="">
+        <li class="layui-nav-item">
+            <a id="showTime" style="color:#FFFFFF; padding-left:50px;"></a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="javascript:;">admin</a>
+        </li>
+    </ul>
+</div>
+<!-- 顶部结束 -->
+
+<!-- 中部开始 -->
+<!-- 左侧菜单开始 -->
+<div class="left-nav">
+    <div id="side-nav">
+        <div id="test1" class="iconfont nav_right"></div>
+    </div>
+</div>
+<!-- 左侧菜单结束 -->
+
+<!-- 右侧主体开始 -->
+<div class="page-content">
+    <div class="layui-tab tab" lay-filter="tabTest" lay-allowclose="true">
+        <ul class="layui-tab-title">
+            <li class="home"><i class="layui-icon">&#xe68e;</i>客户关系管理系统</li>
+        </ul>
+        <div class="layui-tab-content">
+            <div class="layui-tab-item layui-show">
+                <iframe id="admin_content" src='../../user/toUser' frameborder="0" scrolling="yes" class="x-iframe"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-content-bg"></div>
+<!-- 右侧主体结束 -->
+<!-- 中部结束 -->
+
+<script>
+    //JavaScript代码区域
+    function show() {
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth() + 1;
+        var day = date.getDate();
+        var h = date.getHours();
+        var m = date.getMinutes();
+        var s = date.getSeconds();
+        var str = year + "年" + month + "月" + day + "日" + " " + h + "时" + m
+            + "分" + s + "秒";
+        document.getElementById("showTime").innerHTML = str;
+        var b = setTimeout("show()", 1000);
+    }
+    window.onload = show;
+
+    layui.use(['element','tree','layer'], function(){
+        var element = layui.element,
+            tree = layui.tree,
+            layer = layui.layer,
+            $ = layui.$;
+
+        // 获取菜单列表
+        $.ajax({
+            url:"/menu/tree",
+            type:"post",
+            dataType:"json",
+            async:false,
+            success:function(data){
+                trees(data);
+            },
+            error:function(data){
+                layer.alert("错误");
+            }
+        });
+
+        // 渲染菜单
+        function trees(data) {
+            //渲染
+            var inst1 = tree.render({
+                elem: '#test1'  //绑定元素
+                ,data: data
+                ,showLine: false  //是否开启连接线
+                ,click: function(obj) {
+                    //console.log(obj.data); //得到当前点击的节点数据
+                    var href = obj.data.href;
+                    if (href !=null && href != '') {
+                        // 如果路径非空，更改iframe里面的内容
+                        $('#admin_content').attr("src", href);
+                    }
+                }
+            });
+        }
+
+    });
+</script>
+</body>
+</html>

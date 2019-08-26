@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>用户管理</title>
+    <head th:include="comm::header">
+    </head>
+</head>
+<body>
+<div>
+    <div class="layui-card-body ">
+        <form class="layui-form layui-col-space5">
+            <div class="layui-inline layui-show-xs-block">
+                <input class="layui-input"  autocomplete="off" placeholder="开始日" name="startTime" id="startTime">
+            </div>
+            <div class="layui-inline layui-show-xs-block">
+                <input class="layui-input"  autocomplete="off" placeholder="截止日" name="endTime" id="endTime">
+            </div>
+            <div class="layui-inline layui-show-xs-block">
+                <input type="text" name="userName2" id="userName2" placeholder="请输入用户名" autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-inline layui-show-xs-block" id="userSex2">
+                <input type="radio" name="userSex2" value="1" title="男" />
+                <input type="radio" name="userSex2" value="0" title="女" />
+            </div>
+            <a class="layui-btn" id="search" onclick="searchUser()" ><i class="layui-icon">&#xe615;</i></a>
+        </form>
+    </div>
+    <div class="layui-card-header">
+        <button class="layui-btn" onclick="xadmin.open('添加用户','../user/toAddUser',600,600)"><i class="layui-icon"></i>添加</button>
+    </div>
+    <table class="layui-hide" id="test" lay-filter="test"></table>
+</div>
+
+
+<!--编辑模态框-->
+<div id="motaikuang" style="display: none;">
+    <div class="x-body">
+        <form class="layui-form" lay-filter="boardFilter">
+            <!-- 用户编号 -->
+            <input type="hidden" id="userId" name="userId" >
+
+            <div class="layui-form-item">
+                <label for="userName" class="layui-form-label">
+                    用户名
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="userName" name="userName" lay-verify="required|myName"
+                           autocomplete="off" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label for="userPhone" class="layui-form-label">
+                    <span class="x-red">*</span>手机号
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="userPhone" name="userPhone" lay-verify="required|phone"
+                           autocomplete="off" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label for="userBirthday" class="layui-form-label">
+                    <span class="x-red">*</span>生日
+                </label>
+                <div class="layui-input-inline">
+                    <input class="layui-input"  autocomplete="off" id="userBirthday" name="userBirthday" lay-verify="required|date">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    <span class="x-red">*</span>性别
+                </label>
+                <div class="layui-input-block">
+                    <input checked="" type="radio" name="userSex" value="1" title="男" />
+                    <input type="radio" name="userSex" value="0" title="女" />
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label for="role" class="layui-form-label">
+                    <span class="x-red">*</span>角色
+                </label>
+                <div class="layui-input-inline" >
+                    <select name="userRoleId" id="role" lay-verify="required">
+                        <option value="">--请选择--</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label"></label>
+                <input class="layui-btn" id="btnSave2" lay-filter="update" lay-submit="" type="submit" value="确认修改" />
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+
+<!-- 行操作 -->
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<!-- 用户性别显示效果 -->
+<script type="text/html" id="stateTpl">
+    {{#  if(d.userSex === 0){ }}
+    <span style="color:#FF5722;">{{ '女' }}</span>
+    {{#  } else { }}
+    <span style="color:#01AAED;">{{ '男' }}</span>
+    {{#  } }}
+</script>
+
+<script type="text/javascript" th:inline="none">
+    layui.use(['table','form','laydate'], function(){
+            var table = layui.table,
+                form = layui.form,
+                laydate = layui.laydate;
+
+        table.render({
+            elem: '#test'
+            ,url:'/user/list'
+            ,method:"post"
+            ,cols: [[
+                {field:'id', width:100, title: 'ID', sort: true}
+                ,{field:'userId', width:200, title: '用户编号'}
+                ,{field:'userName', width:150, title: '用户名', sort: true}
+                ,{field:'userBirthday', width:200, title: '用户生日'}
+                ,{field:'userSex', width:100, title: '性别', toolbar: '#stateTpl', sort: true}
+                ,{field:'createTime', width:200, title: '创建时间', sort: true}
+                ,{field:'updateTime', width:200, title: '修改时间', sort: true}
+                ,{fixed: 'right', title: '操作', align:'center', toolbar: '#barDemo'}
+            ]]
+            ,page: true
+        });
+
+        //日期选择1
+        var nowTime = new Date().valueOf();
+        var start = laydate.render({
+            elem: '#startTime',
+            type: 'date',
+            max: nowTime,
+            done: function(value, date){
+                end.config.min = date;
+                end.config.min.month = date.month-1;
+            }
+        });
+
+        //日期选择2
+        var end = laydate.render({
+            elem: '#endTime',
+            type: 'date',
+            max: nowTime,
+            done: function(value, date){
+                if($.trim(value) == ''){
+                    var curDate = new Date();
+                    date = {'date': curDate.getDate(), 'month': curDate.getMonth()+1, 'year': curDate.getFullYear()};
+                }
+                start.config.max = date;
+                start.config.max.month = date.month-1;
+            }
+        });
+
+        //生日日期选择
+        var nowTime = new Date().valueOf();
+        var start = laydate.render({
+            elem: '#userBirthday',
+            type: 'date',
+            max: nowTime,
+            done: function(value, date){
+                end.config.min = date;
+                end.config.min.month = date.month-1;
+            }
+        });
+
+        //监听行工具事件
+        table.on('tool(test)', function(obj){
+            var data = obj.data;
+            //删除操作
+            if(obj.event === 'del'){
+                layer.confirm('确认删除该用户?', function(index){
+                    //异步操作，修改员工状态
+                    $.ajax({
+                        url:"/user/del",
+                        data:{"userId":data.userId},
+                        type:"post",
+                        success:function(datas){
+                            table.reload("test");
+                            layer.close(layer.index);
+                            if (datas=="success") {
+                                layer.msg("成功删除");
+                            } else {
+                                layer.msg("删除失败");
+                            }
+                        },
+                        error:function(){
+                            layer.msg("删除错误");
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                //编辑事件
+                $("[name='id']").val(data.id);
+                $("[name='userId']").val(data.userId);
+                $("[name='userName']").val(data.userName);
+                $("[name='userBirthday']").val(data.userBirthday);
+                $("[name='userPhone']").val(data.userPhone);
+                $("[name='userRoleId']").val(data.userRoleId);
+                // 为radio赋默认值
+                $("input[name=userSex][value='0']").attr("checked", data.userSex == 0 ? true : false);
+
+                //刷新表单数据 使其默认值有效
+                form.render(); //更新全部
+                /*form.render('select','boardFilter');*/
+
+                //打开模态框
+                layer.open({
+                    type:1,//类型
+                    area:['600px','500px'],//定义宽和高
+                    title:'编辑用户信息',//题目
+                    shadeClose:false,//点击遮罩层关闭
+                    content: $('#motaikuang')//打开的内容
+                });
+            }
+        });
+
+        //加载下拉框中的数据（角色选择）
+        $.ajax({
+            url:"/role/all",
+            type:"post",
+            dataType:"json",
+            success:function(data){
+                var list = "";
+                for (var i = 0; i < data.length; i++) {
+                    list+="<option value='"+data[i].roleId+"'>"+ data[i].roleName +"</option>";
+                }
+                $("#role").append(list);
+                //重新刷新form表单
+                form.render();
+            },
+            error:function(data){
+                layer.msg("角色信息获取错误");
+            }
+        });
+
+        //监听修改提交
+        form.on('submit(update)', function(data){
+            // * 整合表单数据
+            var formData = data.field;
+
+            //发异步，把数据提交
+            $.ajax({
+                url:"/user/update",
+                data:formData,
+                type:"post",
+                success:function(datas){
+                    // 关闭最近的弹窗
+                    layer.close(layer.index);
+                    // 刷新表格信息
+                    table.reload("test");
+
+                    if (datas=="success") {
+                        layer.msg("用户信息修改成功", {icon: 6});
+                    } else {
+                        layer.msg("用户信息修改失败", {icon: 5});
+                    }
+                },
+                error:function(){
+                    layer.msg("用户信息修改错误", {icon: 5});
+                }
+            });
+            //必不可少
+            return false;
+        });
+
+
+    });
+
+    //模糊查询刷新页面
+    function searchUser(){
+        layui.use('table', function(){
+            var table = layui.table;
+            var userName = $("#userName2").val();
+            // 获取选中的值
+            var userSex = $('#userSex2 input[name="userSex2"]:checked ').val();
+            var startTime = $("#startTime").val();
+            var endTime = $("#endTime").val();
+
+            table.reload('test', {
+                url: '/user/list'
+                ,method:"post"
+                ,where: {
+                    userName:userName,
+                    userSex:userSex,
+                    startTime:startTime,
+                    endTime:endTime
+                } //设定异步数据接口的额外参数
+                ,page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+            });
+        });
+    }
+
+</script>
+
+</html>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tongdao.demo.mapper.IUserMapper">
+
+    <select id="listUser" resultMap="UserResult">
+        select * from user
+        <where>
+            <if test="userId != null"> and user_id = #{userId} </if>
+            <if test="userName!=null and userName!=''"> and user_name like concat("%",#{userName},"%")</if>
+            <if test="userSex!=null and userSex!=''"> and user_sex = #{userSex}</if>
+            <if test="startTime!=null and startTime !=''"> and create_time >=#{startTime} </if>
+            <if test="endTime!=null and endTime !=''"> and create_time &lt;= date_add(#{endTime}, interval 1 day) </if>
+            and user_state = 1
+        </where>
+            order by id desc
+            limit #{page},#{limit}
+    </select>
+
+    <select id="countUser" resultType="int">
+        select count(*) from user
+        <where>
+            <if test="userId != null"> and user_id = #{userId} </if>
+            <if test="userName!=null and userName!=''"> and user_name like concat("%",#{userName},"%")</if>
+            <if test="userSex!=null and userSex!=''"> and user_sex = #{userSex}</if>
+            <if test="startTime!=null and startTime !=''"> and create_time >=#{startTime} </if>
+            <if test="endTime!=null and endTime !=''"> and create_time &lt;= date_add(#{endTime}, interval 1 day) </if>
+            and user_state = 1
+        </where>
+    </select>
+
+    <select id="listBirthdayDayAfter" resultMap="UserResult">
+        select user_id,user_name from user where
+        CONCAT(YEAR(CURDATE()),DATE_FORMAT(user_birthday,'-%m-%d'))
+        BETWEEN ADDDATE(CURDATE(),INTERVAL '+1+' DAY) AND ADDDATE(CURDATE(),INTERVAL '+1+' DAY)
+    </select>
+
+    <select id="dataBirthdayMonths" resultMap="UserResult">
+        select DATE_FORMAT(user_birthday, "%m") as month, count(*) as num from user group by DATE_FORMAT(user_birthday, "%m");
+    </select>
+
+    <resultMap id="UserResult" type="com.tongdao.demo.entity.vo.UserVo" >
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="userPhone" column="user_phone"/>
+        <result property="userRoleId" column="user_role_id"/>
+        <result property="userState" column="user_state"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="userBirthday" column="user_birthday"/>
+        <result property="userSex" column="user_sex"/>
+
+        <result property="month" column="month"/>
+        <result property="num" column="num"/>
+    </resultMap>
+</mapper>

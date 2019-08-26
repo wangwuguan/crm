@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>角色管理</title>
+    <head th:include="comm::header">
+    </head>
+<body>
+<div>
+    <div class="layui-card-body ">
+        <form class="layui-form layui-col-space5">
+            <div class="layui-inline layui-show-xs-block">
+                <input class="layui-input"  autocomplete="off" placeholder="开始日" name="startTime" id="startTime">
+            </div>
+            <div class="layui-inline layui-show-xs-block">
+                <input class="layui-input"  autocomplete="off" placeholder="截止日" name="endTime" id="endTime">
+            </div>
+            <div class="layui-inline layui-show-xs-block">
+                <input type="text" name="roleName2" id="roleName2" placeholder="请输入角色名" autocomplete="off" class="layui-input">
+            </div>
+
+            <a class="layui-btn" id="search" onclick="searchRole()" ><i class="layui-icon">&#xe615;</i></a>
+        </form>
+    </div>
+    <div class="layui-card-header">
+        <button class="layui-btn" onclick="xadmin.open('添加角色','../role/toAddRole',400,400)"><i class="layui-icon"></i>添加</button>
+    </div>
+    <table class="layui-hide" id="test" lay-filter="test"></table>
+</div>
+
+<!--编辑模态框-->
+<div id="motaikuang" style="display: none;">
+    <div class="x-body">
+        <form class="layui-form">
+            <input type="hidden" id="roleId" name="roleId">
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    <span class="x-red">*</span>角色名
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="roleName" name="roleName" lay-verify="required|myName"
+                           autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    <span class="x-red">*</span>角色描述
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="roleDescribe" name="roleDescribe" lay-verify="required"
+                           autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label"></label>
+                <input class="layui-btn" id="btnSave" lay-filter="update" lay-submit="" type="submit" value="确认修改" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 行操作 -->
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit"><i class="layui-icon">&#xe642;</i>编辑</a>
+    {{#  if(d.roleState === 0 ){ }}
+    <a class="layui-btn layui-btn layui-btn-xs" lay-event="change"><i class="layui-icon">&#xe620;</i>启用</a>
+    {{#  } else { }}
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="change"><i class="layui-icon">&#xe620;</i>禁用</a>
+    {{#  } }}
+
+</script>
+
+<!-- 角色状态显示效果 -->
+<script type="text/html" id="stateTpl">
+    {{#  if(d.roleState === 0){ }}
+    <span style="color:#FF5722;">{{ '已禁用' }}</span>
+    {{#  } else { }}
+    <span style="color:#01AAED;">{{ '使用中' }}</span>
+    {{#  } }}
+</script>
+
+<!-- 展示页面所需js -->
+<script type="text/javascript" th:inline="none">
+
+    layui.use(['table','form','laydate'], function() {
+        var table = layui.table,
+            form = layui.form,
+            laydate = layui.laydate;
+
+        //数据获取
+        table.render({
+            /* id:"uid",//可以在这里设置需要隐藏的列的字段名，如果是要隐藏多列的话这样写 id:'id,sex' */
+            elem: '#test'
+            ,url: '/role/list'
+            ,title: '角色数据表'
+            ,method:"post"
+            ,cols: [[
+                {type: 'numbers', title: '编号', fixed: 'left'}
+                ,{field: 'roleId', title: '角色ID', sort: true, totalRow: true}
+                ,{field: 'roleName', title: '角色名称'}
+                ,{field: 'roleDescribe', title: '角色描述'}
+                ,{field: 'roleState', title: '角色状态', align: 'center', toolbar: '#stateTpl'}
+                ,{field: 'createTime', title: '创建时间', sort: true}
+                ,{field: 'updateTime',  title: '修改时间', sort: true}
+                ,{fixed: 'right', title: '操作', align: 'center', toolbar: '#barDemo'}
+            ]]
+            , page: true
+        });
+
+        //日期选择1
+        var nowTime = new Date().valueOf();
+        var start = laydate.render({
+            elem: '#startTime',
+            type: 'date',
+            max: nowTime,
+            done: function(value, date){
+                end.config.min = date;
+                end.config.min.month = date.month-1;
+            }
+        });
+
+        //日期选择2
+        var end = laydate.render({
+            elem: '#endTime',
+            type: 'date',
+            max: nowTime,
+            done: function(value, date){
+                if($.trim(value) == ''){
+                    var curDate = new Date();
+                    date = {'date': curDate.getDate(), 'month': curDate.getMonth()+1, 'year': curDate.getFullYear()};
+                }
+                start.config.max = date;
+                start.config.max.month = date.month-1;
+            }
+        });
+
+        //监听行工具事件
+        table.on('tool(test)', function(obj) {
+            var data = obj.data;
+            //角色禁用操作
+            if (obj.event === 'change') {
+                layer.confirm(data.roleState==0?'确定启用该角色？':'确定禁用该角色?', function (index) {
+                    $.ajax({
+                        url: "/role/change",
+                        data: {"roleId": data.roleId, "roleState": data.roleState==0?1:0},
+                        type: "post",
+                        success: function (datas) {
+                            if (datas == "success") {
+                                table.reload("test");
+                                if (data.roleState == 0) {
+                                    layer.msg("角色已被启用");
+                                } else {
+                                    layer.msg("角色已被禁用");
+                                }
+                            } else {
+                                layer.msg("角色状态修改失败");
+                            }
+                        },
+                        error: function () {
+                            layer.alert("修改错误");
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit') {
+                //编辑事件
+                $("[name='roleId']").val(data.roleId);
+                $("[name='roleName']").val(data.roleName);
+                $("[name='roleDescribe']").val(data.roleDescribe);
+                //打开模态框
+                layer.open({
+                    type: 1,//类型
+                    area: ['500px', '300px'],//定义宽和高
+                    title: '查看详细信息',//题目
+                    shadeClose: false,//点击遮罩层关闭
+                    content: $('#motaikuang')//打开的内容
+                });
+            }
+        });
+
+        //监听修改提交
+        form.on('submit(update)', function(data){
+            // * 整合表单数据
+            var formData = data.field;
+
+            //发异步，把数据提交
+            $.ajax({
+                url:"/role/update",
+                data:formData,
+                type:"post",
+                success:function(datas){
+                    // 关闭最近的弹窗
+                    layer.close(layer.index);
+                    // 刷新表格信息
+                    table.reload("test");
+                    if (datas=="success") {
+                        layer.msg("菜单信息修改成功", {icon: 6});
+                    } else {
+                        layer.msg("角色信息修改失败", {icon: 5});
+                    }
+                },
+                error:function(){
+                    layer.msg("角色信息修改错误", {icon: 5});
+                }
+            });
+            //必不可少
+            return false;
+        });
+
+    });
+
+    //模糊查询刷新页面
+    function searchRole(){
+        layui.use('table', function(){
+            var table = layui.table;
+            var roleName = $("#roleName2").val();
+            var startTime = $("#startTime").val();
+            var endTime = $("#endTime").val();
+            table.reload('test', {
+                url: '/role/list'
+                ,method:"post"
+                ,where: {
+                    roleName:roleName,
+                    startTime:startTime,
+                    endTime:endTime
+                } //设定异步数据接口的额外参数
+                ,page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+            });
+        });
+    }
+
+</script>
+</body>
+</html>

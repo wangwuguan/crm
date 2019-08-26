@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>添加角色</title>
+    <head th:include="comm::header">
+    </head>
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-row">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    <span class="x-red">*</span>角色名
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="roleName" name="roleName" lay-verify="required|myName"
+                           autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">
+                    <span class="x-red">*</span>角色描述
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="roleDescribe" name="roleDescribe" lay-verify="required"
+                           autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label"></label>
+                <input class="layui-btn" id="btnSave" lay-filter="add" lay-submit="" type="submit" value="增加" />
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    layui.use(['form', 'layer'], function() {
+        $ = layui.jquery;
+        var form = layui.form,
+            layer = layui.layer;
+
+        //监听提交
+        form.on('submit(add)', function(data){
+            // * 整合表单数据
+            var formData = data.field;
+            //发异步，把数据提交
+            $.ajax({
+                url:"/role/insert",
+                data:formData,
+                type:"post",
+                success:function(datas){
+                    if (datas=="success") {
+                        layer.alert("添加成功", {icon: 6},function () {
+                            closeLayer();
+                        });
+                    } else {
+                        layer.alert("添加失败", {icon: 5}, function () {
+                            closeLayer();
+                        })
+                    }
+                },
+                error:function(){
+                    layer.alert("添加错误", {icon: 2}, function () {
+                        closeLayer();
+                    })
+                }
+            });
+            //必不可少
+            return false;
+        });
+
+        // 关闭弹窗
+        function closeLayer() {
+            // 获得frame索引
+            var index = parent.layer.getFrameIndex(window.name);
+            //刷新父页面
+            window.parent.location.reload();
+            //关闭当前frame
+            parent.layer.close(index);
+        }
+
+    });
+</script>
+
+</body>
+
+</html>

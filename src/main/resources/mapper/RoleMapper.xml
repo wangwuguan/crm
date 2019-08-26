@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tongdao.demo.mapper.IRoleMapper">
+
+    <select id="listRoleAll" resultMap="RoleResult">
+        select * from role
+    </select>
+
+    <select id="listRole" resultMap="RoleResult">
+        select * from role
+        <where>
+            <if test="roleName!=null and roleName!=''"> and role_name like concat("%",#{roleName},"%")</if>
+            <if test="startTime!=null and startTime !=''"> and create_time >=#{startTime} </if>
+            <if test="endTime!=null and endTime !=''"> and create_time &lt;= date_add(#{endTime}, interval 1 day) </if>
+        </where>
+        order by role_id desc
+        limit #{page},#{limit}
+    </select>
+
+    <select id="countRole" resultType="int">
+        select count(*) from role
+        <where>
+            <if test="roleName!=null and roleName!=''"> and role_name like concat("%",#{roleName},"%")</if>
+            <if test="startTime!=null and startTime !=''"> and create_time >=#{startTime} </if>
+            <if test="endTime!=null and endTime !=''"> and create_time &lt;= date_add(#{endTime}, interval 1 day) </if>
+        </where>
+    </select>
+
+    <resultMap id="RoleResult" type="com.tongdao.demo.entity.vo.RoleVo">
+        <id property="id" column="id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleDescribe" column="role_describe"/>
+        <result property="roleState" column="role_state"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+</mapper>
